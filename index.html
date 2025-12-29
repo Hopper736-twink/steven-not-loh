@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Steven: Legend of Ortussolis</title>
+<style>
+body{margin:0;background:#0a0f1f;color:#eee;font-family:Arial}
+canvas{display:block;margin:auto;background:#151a2e;border-radius:12px}
+#ui,#menu{max-width:960px;margin:auto;padding:6px;font-size:14px;text-align:center}
+button{background:#222;color:#fff;border:none;padding:8px 14px;border-radius:8px;margin:4px}
+.dialog{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+background:#000d;padding:12px 16px;border-radius:12px;max-width:90%;text-align:center}
+.fade{animation:fade 1s infinite alternate}
+@keyframes fade{from{opacity:.6}to{opacity:1}}
+</style>
+</head>
+<body>
+
+<div id="menu">
+<h2>STEVEN: LEGEND OF ORTUSSOLIS</h2>
+<p>«Его называли лохом. История запомнила легенду.»</p>
+<button onclick="start()">▶ Начать</button>
+</div>
+
+<canvas id="game" width="960" height="540" style="display:none"></canvas>
+
+<div id="ui" style="display:none">
+❤️ <span id="hp"></span> |
+🪙 <span id="gold"></span> |
+⭐ <span id="rep"></span> |
+🏆 <span id="ach"></span>
+</div>
+
+<div id="dialog" class="dialog" style="display:none"></div>
+
+<script>
+/* ---------- АУДИО ---------- */
+const audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+function tone(freq,d=0.1){
+  let o=audioCtx.createOscillator(),g=audioCtx.createGain();
+  o.frequency.value=freq;o.connect(g);g.connect(audioCtx.destination);
+  o.start();g.gain.exponentialRampToValueAtTime(0.0001,audioCtx.currentTime+d);
+  o.stop(audioCtx.currentTime+d);
+}
+
+/* ---------- ОСНОВНОЕ ---------- */
+const c=document.getElementById("game"),ctx=c.getContext("2d");
+const W=c.width,H=c.height;
+let keys={},secret="";
+onkeydown=e=>{
+  keys[e.key]=true;
+  secret+=e.key.toUpperCase();
+  if(secret.includes("HOPPER")){
+    unlockHopper();
+    secret="";
+  }
+};
+onkeyup=e=>keys[e.key]=false;
+
+const dialogBox=document.getElementById("dialog");
+function dialog(t,time=3500){
+  dialogBox.style.display="block";
+  dialogBox.textContent=t;
+  setTimeout(()=>dialogBox.style.display="none",time);
+}
+
+class Player{
+  constructor(){
+    this.x=100;this.y=380;
+    this.w=32;this.h=48;
+    this.vx=0;this.vy=0;
+    this.hp=60;this.gold=0;this.rep=-10;
+  }
+  dmg(d){this.hp-=d*0.6;tone(200)}
+  update(dt){
+    if(keys.a||keys.ArrowLeft)this.vx=-300;
+    if(keys.d||keys.ArrowRight)this.vx=300;
+    if(keys[" "]&&this.y>=380)this.vy=-900;
+    this.vy+=2000*dt;
+    this.x+=this.vx*dt;this.y+=this.vy*dt;
+    this.vx*=0.85;
+    if(this.y>380){this.y=380;this.vy=0}
+  }
+  draw(){
+    ctx.fillStyle="#e6c37a";
+    ctx.fillRect(this.x,this.y,this.w,this.h);
+  }
+}
+
+class Enemy{
+  constructor(x,boss=false){
+    this.x=x;this.y=380;
+    this.w=boss?80:36;
+    this.h=boss?80:36;
+    this.hp=boss?250:30;
+    this.boss=boss;
+  }
+  update(dt){this.x-=this.boss?40*dt:120*dt}
+  draw(){
+    ctx.fillStyle=this.boss?"#a33":"#8899aa";
+    ctx.fillRect(this.x,this.y,this.w,this.h);
+    if(!this.boss&&Math.random()<0.02)
+      ctx.fillText("ЛОХ",this.x,this.y-6);
+  }
+}
+
+let player,enemies=[],stage=1,achievements=[];
+
+function start(){
+  document.getElementById("menu").style.display="none";
+  c.style.display="block";
+  document.getElementById("ui").style.display="block";
+  player=new Player();
+  spawn();
+  loop(performance.now());
+  dialog("История начинается…");
+}
+
+function spawn(){
+  enemies=[];
+  if(stage<4){
+    for(let i=0;i<stage+2;i++)
+      enemies.push(new Enemy(600+i*120));
+    dialog(stage==1?"Жители: ЛОХ!":
+           stage==2?"Он терпит…":
+           "О нём говорят…");
+  }else{
+    enemies.push(new Enemy(650,true));
+    dialog("Король: Даже легенды падают.");
+  }
+}
+
+function collide(a,b){
+  return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
+}
+
+function unlockHopper(){
+  achievements.push("Hopper736");
+  dialog("🥚 Пасхалка найдена: Hopper736\nСоздатель пути.",6000);
+  player.gold+=736;
+}
+
+function repName(){
+  if(player.rep<0)return"ЛОХ";
+  if(player.rep<20)return"ИЗВЕСТНЫЙ";
+  if(player.rep<40)return"ГЕРОЙ";
+  return"ЛЕГЕНДА";
+}
+
+let last=performance.now();
+function loop(t){
+  let dt=(t-last)/1000;last=t;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle="#2a2f45";
+  ctx.fillRect(0,420,W,120);
+
+  player.update(dt);
+  player.draw();
+
+  enemies.forEach(e=>{
+    e.update(dt);e.draw();
+    if(collide(player,e)){
+      player.dmg(e.boss?2:0.5);
+      if(keys.f){e.hp-=15;tone(600)}
+    }
+  });
+
+  enemies=enemies.filter(e=>e.hp>0&&e.x>-200);
+
+  if(enemies.length==0){
+    stage++;
+    if(stage>4){
+      dialog("Стивен стал ЛЕГЕНДОЙ.\nНо путь важнее цели.",8000);
+      return;
+    }
+    spawn();
+  }
+
+  hp.textContent=Math.ceil(player.hp);
+  gold.textContent=player.gold;
+  rep.textContent=repName();
+  ach.textContent=achievements.join(", ")||"—";
+
+  if(player.hp>0)requestAnimationFrame(loop);
+}
+
+const hp=document.getElementById("hp"),
+gold=document.getElementById("gold"),
+rep=document.getElementById("rep"),
+ach=document.getElementById("ach");
+</script>
+
+</body>
+</html>
