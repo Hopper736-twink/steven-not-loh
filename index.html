@@ -1,157 +1,272 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-<meta charset="UTF-8">
-<title>Steven: Legend of Gold</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<style>
-  body { margin:0; background:#111; color:white; font-family:Arial; text-align:center; }
-  canvas { background:#222; display:block; margin:0 auto; }
-</style>
-</head>
-<body>
-
-<h2>Steven: Legend of Gold</h2>
-<p>WASD / Стрелки — движение | Space — прыжок | Shift — рывок</p>
-
-<canvas id="game" width="360" height="540"></canvas>
-
-<script>
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
-
-let keys = {};
-document.addEventListener("keydown", e => keys[e.key] = true);
-document.addEventListener("keyup", e => keys[e.key] = false);
-
-const GRAVITY = 1.2;
-
-let player = {
-  x: 50, y: 420, w: 30, h: 30,
-  vx: 0, vy: 0,
-  hp: 60,
-  onGround: false,
-  lastDash: 0
-};
-
-let enemies = [
-  { x: 300, y: 430, w: 30, h: 30, hp: 20 },
-  { x: 500, y: 430, w: 30, h: 30, hp: 20 }
-];
-
-let boss = {
-  x: 900, y: 400, w: 60, h: 60, hp: 100
-};
-
-let cameraX = 0;
-let gameWon = false;
-
-function rect(a,b){
-  return a.x < b.x+b.w && a.x+a.w > b.x &&
-         a.y < b.y+b.h && a.y+a.h > b.y;
+<parameter name="old_str">            const hpPercent = boss.hp / boss.maxHp;
+const gradient2 = ctx.createLinearGradient(barX, 0, barX + barWidth, 0);
+if (boss.phase === 2) {</parameter>
+<parameter name="new_str">            const hpPercent = boss.hp / boss.maxHp;
+const gradient2 = ctx.createLinearGradient(barX, 0, barX + barWidth, 0);
+if (boss.phase === 2) {
+gradient2.addColorStop(0, '#ff0000');
+gradient2.addColorStop(1, '#ff6600');
+} else {
+gradient2.addColorStop(0, '#ff6600');
+gradient2.addColorStop(1, '#ffaa00');
 }
+ctx.fillStyle = gradient2;
+ctx.fillRect(barX, y - 20, barWidth * hpPercent, 10);
 
-function update(){
-  if(gameWon) return;
 
-  // движение
-  if(keys["a"] || keys["ArrowLeft"]) player.vx = -4;
-  if(keys["d"] || keys["ArrowRight"]) player.vx = 4;
-  if((keys[" "] || keys["Space"]) && player.onGround){
-    player.vy = -15;
-    player.onGround = false;
-  }
-
-  // рывок
-  if(keys["Shift"] && Date.now() - player.lastDash > 1000){
-    player.vx *= 4;
-    player.lastDash = Date.now();
-  }
-
-  player.vy += GRAVITY;
-  player.x += player.vx;
-  player.y += player.vy;
-  player.vx *= 0.8;
-
-  // земля
-  if(player.y + player.h >= 480){
-    player.y = 480 - player.h;
-    player.vy = 0;
-    player.onGround = true;
-  }
-
-  // камера
-  cameraX = player.x - 100;
-
-  // враги
-  enemies.forEach(e => {
-    e.x -= 1;
-    if(rect(player,e)){
-      e.hp -= 1;
-      player.hp -= 0.2;
+        ctx.strokeStyle = boss.phase === 2 ? '#ff0000' : '#FFD700';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(barX, y - 20, barWidth, 10);
     }
-  });
-
-  enemies = enemies.filter(e => e.hp > 0);
-
-  // босс
-  if(rect(player,boss)){
-    boss.hp -= 0.5;
-    player.hp -= 0.5;
-  }
-
-  if(boss.hp <= 0){
-    gameWon = true;
-  }
-}
-
-function draw(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-
-  ctx.save();
-  ctx.translate(-cameraX,0);
-
-  // земля
-  ctx.fillStyle="#444";
-  ctx.fillRect(-1000,480,3000,60);
-
-  // игрок
-  ctx.fillStyle="gold";
-  ctx.fillRect(player.x,player.y,player.w,player.h);
-
-  // враги
-  ctx.fillStyle="red";
-  enemies.forEach(e => ctx.fillRect(e.x,e.y,e.w,e.h));
-
-  // босс
-  ctx.fillStyle="purple";
-  ctx.fillRect(boss.x,boss.y,boss.w,boss.h);
-
-  ctx.restore();
-
-  // HUD
-  ctx.fillStyle="white";
-  ctx.fillText("HP: "+Math.floor(player.hp),10,20);
-
-  if(gameWon){
-    ctx.fillStyle="rgba(0,0,0,0.8)";
-    ctx.fillRect(0,0,canvas.width,canvas.height);
-    ctx.fillStyle="gold";
-    ctx.font="20px Arial";
-    ctx.fillText("Стивен стал легендой",60,220);
-    ctx.font="16px Arial";
-    ctx.fillText("Тут был Hopper736",90,260);
-  }
-}
-
-function loop(){
-  update();
-  draw();
-  requestAnimationFrame(loop);
-}
-
-loop();
+    
+    function draw() {
+        ctx.save();
+        if (shakeAmount > 0) {
+            ctx.translate(
+                (Math.random() - 0.5) * shakeAmount,
+                (Math.random() - 0.5) * shakeAmount
+            );
+            shakeAmount *= 0.8;
+            if (shakeAmount < 0.1) shakeAmount = 0;
+        }
+        
+        // Фон (небо)
+        const skyGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+        skyGradient.addColorStop(0, '#87CEEB');
+        skyGradient.addColorStop(0.7, '#B0E0E6');
+        skyGradient.addColorStop(1, '#98D8C8');
+        ctx.fillStyle = skyGradient;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Облака
+        ctx.fillStyle = 'rgba(255,255,255,0.6)';
+        ctx.beginPath();
+        ctx.arc(100, 80, 40, 0, Math.PI * 2);
+        ctx.arc(140, 70, 50, 0, Math.PI * 2);
+        ctx.arc(180, 80, 40, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.beginPath();
+        ctx.arc(500, 120, 35, 0, Math.PI * 2);
+        ctx.arc(540, 110, 45, 0, Math.PI * 2);
+        ctx.arc(580, 120, 35, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Земля с текстурой
+        const groundGradient = ctx.createLinearGradient(0, ground, 0, canvas.height);
+        groundGradient.addColorStop(0, '#8B6914');
+        groundGradient.addColorStop(1, '#654321');
+        ctx.fillStyle = groundGradient;
+        ctx.fillRect(0, ground, canvas.width, canvas.height - ground);
+        
+        // Трава
+        ctx.fillStyle = '#7CB342';
+        ctx.fillRect(0, ground - 8, canvas.width, 8);
+        
+        // Детали травы
+        ctx.fillStyle = '#689F38';
+        for (let i = 0; i < canvas.width; i += 20) {
+            ctx.fillRect(i, ground - 8, 2, 8);
+            ctx.fillRect(i + 10, ground - 8, 2, 8);
+        }
+        
+        // Частицы (позади персонажей)
+        particles.forEach(p => {
+            ctx.fillStyle = p.color;
+            ctx.globalAlpha = p.life / p.maxLife;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            ctx.fill();
+        });
+        ctx.globalAlpha = 1;
+        
+        // Снаряды
+        projectiles.forEach(p => {
+            ctx.save();
+            ctx.translate(p.x, p.y);
+            if (p.rotation) ctx.rotate(p.rotation);
+            
+            if (p.owner === 'boss') {
+                // Сюрикен
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                for (let i = 0; i < 4; i++) {
+                    const angle = (Math.PI / 2) * i;
+                    ctx.moveTo(0, 0);
+                    ctx.lineTo(Math.cos(angle) * p.radius * 2, Math.sin(angle) * p.radius * 2);
+                }
+                ctx.fill();
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            } else {
+                // Снаряд игрока
+                ctx.fillStyle = p.color;
+                ctx.shadowColor = p.color;
+                ctx.shadowBlur = 10;
+                ctx.beginPath();
+                ctx.arc(0, 0, p.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            }
+            ctx.restore();
+        });
+        
+        drawPlayer();
+        drawBoss();
+        
+        ctx.restore();
+    }
+    
+    function gameLoop() {
+        if (!gameRunning) return;
+        
+        // Управление
+        player.vx = 0;
+        if (keys['a'] || keys['A'] || joystickDir.x < 0) {
+            player.vx = -player.speed;
+            player.facingRight = false;
+        }
+        if (keys['d'] || keys['D'] || joystickDir.x > 0) {
+            player.vx = player.speed;
+            player.facingRight = true;
+        }
+        if ((keys['w'] || keys['W'] || joystickDir.y < 0) && player.onGround) {
+            player.vy = -player.jumpPower;
+        }
+        
+        if (keys[' '] && player.dashCooldown <= 0 && player.dashTime <= 0) {
+            player.dashTime = 12;
+            player.dashCooldown = 70;
+            const dashDir = player.facingRight ? 1 : -1;
+            player.vx = dashDir * 20;
+            createParticle(player.x + player.width/2, player.y + player.height/2, '#FFD700', 8);
+        }
+        
+        if (player.dashTime > 0) player.dashTime--;
+        
+        player.dashCooldown--;
+        player.attackCooldown--;
+        player.invincible--;
+        player.attackAnim = Math.max(0, player.attackAnim - 1);
+        
+        if (mouseDown) playerAttack();
+        
+        updatePhysics(player);
+        updateBoss();
+        updateProjectiles();
+        updateParticles();
+        updateHearts();
+        
+        draw();
+        requestAnimationFrame(gameLoop);
+    }
+    
+    function endGame(victory) {
+        gameRunning = false;
+        const gameOver = document.getElementById('gameOver');
+        const text = document.getElementById('gameOverText');
+        const message = document.getElementById('gameOverMessage');
+        
+        if (victory) {
+            text.textContent = 'ПОБЕДА!';
+            text.style.color = '#FFD700';
+            message.textContent = '⚔ Стивен Златов победил самурая из пластилина! Деревня спасена! ⚔';
+            createParticle(canvas.width/2, canvas.height/2, '#FFD700', 50);
+        } else {
+            text.textContent = 'ПОРАЖЕНИЕ';
+            text.style.color = '#ff0000';
+            message.textContent = 'Самурай оказался сильнее... Но Стивен не сдаётся!';
+        }
+        
+        gameOver.style.display = 'block';
+    }
+    
+    // События клавиатуры
+    document.addEventListener('keydown', e => {
+        keys[e.key] = true;
+        if (e.key >= '1' && e.key <= '3') {
+            player.weapon = parseInt(e.key) - 1;
+            updateWeaponDisplay();
+        }
+    });
+    document.addEventListener('keyup', e => keys[e.key] = false);
+    
+    // Мышь
+    canvas.addEventListener('mousemove', e => {
+        const rect = canvas.getBoundingClientRect();
+        mouseX = (e.clientX - rect.left) * (canvas.width / rect.width);
+        mouseY = (e.clientY - rect.top) * (canvas.height / rect.height);
+    });
+    canvas.addEventListener('mousedown', () => mouseDown = true);
+    canvas.addEventListener('mouseup', () => mouseDown = false);
+    
+    // Мобильное управление
+    const joystick = document.getElementById('joystick');
+    const dashBtn = document.getElementById('dashBtn');
+    const attackBtn = document.getElementById('attackBtn');
+    
+    joystick.addEventListener('touchstart', handleJoystickStart);
+    joystick.addEventListener('touchmove', handleJoystickMove);
+    joystick.addEventListener('touchend', handleJoystickEnd);
+    
+    dashBtn.addEventListener('touchstart', e => {
+        e.preventDefault();
+        keys[' '] = true;
+    });
+    dashBtn.addEventListener('touchend', e => {
+        e.preventDefault();
+        keys[' '] = false;
+    });
+    
+    attackBtn.addEventListener('touchstart', e => {
+        e.preventDefault();
+        mouseDown = true;
+    });
+    attackBtn.addEventListener('touchend', e => {
+        e.preventDefault();
+        mouseDown = false;
+    });
+    
+    function handleJoystickStart(e) {
+        e.preventDefault();
+        joystickActive = true;
+    }
+    
+    function handleJoystickMove(e) {
+        if (!joystickActive) return;
+        e.preventDefault();
+        
+        const touch = e.touches[0];
+        const rect = joystick.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        
+        const dx = touch.clientX - centerX;
+        const dy = touch.clientY - centerY;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        if (distance > 20) {
+            joystickDir.x = dx / distance;
+            joystickDir.y = dy / distance;
+        } else {
+            joystickDir.x = 0;
+            joystickDir.y = 0;
+        }
+    }
+    
+    function handleJoystickEnd(e) {
+        e.preventDefault();
+        joystickActive = false;
+        joystickDir.x = 0;
+        joystickDir.y = 0;
+    }
+    
+    updateHearts();
+    updateWeaponDisplay();
 </script>
 
+
 </body>
-</html>
+
+</html></parameter>
