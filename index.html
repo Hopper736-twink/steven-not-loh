@@ -1,1015 +1,132 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Стивен: Битва с Самураем</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-        }
-        body {
-            background: #1a1a1a;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            font-family: 'Courier New', monospace;
-            overflow: hidden;
-            touch-action: none;
-        }
-        #gameContainer {
-            position: relative;
-            max-width: 100vw;
-            max-height: 100vh;
-            aspect-ratio: 4/3;
-            background: #000;
-            border: 4px solid #333;
-            overflow: hidden;
-        }
-        #canvas {
-            display: block;
-            width: 100%;
-            height: 100%;
-            image-rendering: pixelated;
-            image-rendering: crisp-edges;
-        }
-        #ui {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            right: 10px;
-            display: flex;
-            justify-content: space-between;
-            pointer-events: none;
-            z-index: 10;
-        }
-        .hp-bar {
-            background: rgba(0,0,0,0.8);
-            padding: 8px;
-            border-radius: 5px;
-            border: 2px solid #555;
-        }
-        .label {
-            color: #FFD700;
-            font-size: 11px;
-            font-weight: bold;
-            margin-bottom: 4px;
-            text-shadow: 1px 1px 2px #000;
-        }
-        .hearts {
-            display: flex;
-            gap: 2px;
-            flex-wrap: wrap;
-            max-width: 200px;
-        }
-        .heart {
-            width: 14px;
-            height: 14px;
-            background: #ff0000;
-            clip-path: polygon(50% 15%, 61% 0%, 78% 0%, 93% 15%, 93% 35%, 50% 85%, 7% 35%, 7% 15%, 22% 0%, 39% 0%);
-            box-shadow: 0 0 3px rgba(255,0,0,0.5);
-        }
-        .heart.empty {
-            background: #333;
-            box-shadow: none;
-        }
-        .weapon-info {
-            background: rgba(0,0,0,0.8);
-            padding: 8px;
-            border-radius: 5px;
-            color: #FFD700;
-            text-align: right;
-            border: 2px solid #555;
-            font-size: 11px;
-            font-weight: bold;
-            text-shadow: 1px 1px 2px #000;
-        }
-        #mobileControls {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 180px;
-            display: none;
-            pointer-events: none;
-            z-index: 20;
-        }
-        .control-btn {
-            position: absolute;
-            background: rgba(255,255,255,0.15);
-            border: 3px solid rgba(255,255,255,0.4);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
-            font-size: 20px;
-            pointer-events: all;
-            user-select: none;
-            touch-action: none;
-            backdrop-filter: blur(5px);
-        }
-        .control-btn:active {
-            background: rgba(255,255,255,0.3);
-            border-color: rgba(255,255,255,0.6);
-        }
-        #joystick {
-            bottom: 20px;
-            left: 20px;
-            width: 100px;
-            height: 100px;
-        }
-        #dashBtn {
-            bottom: 20px;
-            left: 140px;
-            width: 70px;
-            height: 70px;
-            font-size: 14px;
-        }
-        #attackBtn {
-            bottom: 80px;
-            right: 20px;
-            width: 80px;
-            height: 80px;
-            background: rgba(255,50,50,0.2);
-            border-color: rgba(255,100,100,0.5);
-        }
-        #attackBtn:active {
-            background: rgba(255,50,50,0.4);
-        }
-        #weaponBtn {
-            bottom: 20px;
-            right: 20px;
-            width: 70px;
-            height: 50px;
-            font-size: 12px;
-            border-radius: 10px;
-        }
-        #startScreen {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 100;
-            color: white;
-        }
-        #startScreen h1 {
-            font-size: 36px;
-            margin-bottom: 20px;
-            color: #FFD700;
-            text-shadow: 3px 3px 6px #000;
-        }
-        #startScreen p {
-            font-size: 14px;
-            margin: 10px 20px;
-            text-align: center;
-            line-height: 1.6;
-        }
-        .story-box {
-            background: rgba(0,0,0,0.6);
-            padding: 15px;
-            border-radius: 10px;
-            max-width: 90%;
-            margin: 20px;
-            border: 2px solid #FFD700;
-        }
-        button {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            padding: 15px 40px;
-            font-size: 18px;
-            cursor: pointer;
-            border-radius: 10px;
-            margin-top: 20px;
-            font-weight: bold;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-            transition: transform 0.1s;
-        }
-        button:hover {
-            transform: scale(1.05);
-        }
-        button:active {
-            transform: scale(0.95);
-        }
-        #gameOver {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0,0,0,0.95);
-            color: white;
-            padding: 30px;
-            border-radius: 15px;
-            text-align: center;
-            display: none;
-            border: 3px solid #FFD700;
-            z-index: 100;
-        }
-        #gameOver h2 {
-            font-size: 42px;
-            margin-bottom: 20px;
-            text-shadow: 2px 2px 4px #000;
-        }
-        @media (max-width: 768px) {
-            #mobileControls {
-                display: block;
-            }
-            #startScreen h1 {
-                font-size: 28px;
-            }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Стивен: Битва с Самураем (Optimized)</title>
+
+<style>
+body{margin:0;background:#111;display:flex;justify-content:center;align-items:center;height:100vh;overflow:hidden;font-family:monospace}
+#game{position:relative;width:100%;max-width:800px;aspect-ratio:4/3;border:4px solid #333}
+canvas{width:100%;height:100%;image-rendering:pixelated}
+#ui{position:absolute;top:8px;left:8px;right:8px;display:flex;justify-content:space-between;pointer-events:none}
+.box{background:rgba(0,0,0,.7);border:2px solid #555;padding:6px;border-radius:6px;color:gold;font-size:11px}
+.hearts{display:flex;gap:3px}
+.heart{width:14px;height:14px;background:red;clip-path:polygon(50% 15%,61% 0%,78% 0%,93% 15%,93% 35%,50% 85%,7% 35%,7% 15%,22% 0%,39% 0%)}
+.empty{background:#333}
+#start,#over{position:absolute;inset:0;background:#000c;display:flex;flex-direction:column;justify-content:center;align-items:center;color:white}
+#over{display:none}
+button{margin-top:15px;padding:12px 30px;font-size:18px;border:none;border-radius:10px;background:#667eea;color:white}
+</style>
 </head>
+
 <body>
-    <div id="gameContainer">
-        <canvas id="canvas" width="800" height="600"></canvas>
-        
-        <div id="ui">
-            <div class="hp-bar">
-                <div class="label">СТИВЕН</div>
-                <div class="hearts" id="playerHearts"></div>
-            </div>
-            <div class="weapon-info">
-                <div id="weaponName">МЕЧ</div>
-                <div style="font-size: 9px; margin-top: 3px; opacity: 0.8;">урон: <span id="weaponDmg">5</span></div>
-            </div>
-        </div>
+<div id="game">
+<canvas id="c" width="800" height="600"></canvas>
 
-        <div id="mobileControls">
-            <div class="control-btn" id="joystick">◄►<br>▲▼</div>
-            <div class="control-btn" id="dashBtn">РЫВОК</div>
-            <div class="control-btn" id="attackBtn">⚔</div>
-            <div class="control-btn" id="weaponBtn" onclick="changeWeapon()">ОРУЖИЕ</div>
-        </div>
+<div id="ui">
+<div class="box"><div>СТИВЕН</div><div class="hearts" id="hp"></div></div>
+<div class="box"><div id="wName"></div><div>урон <span id="wDmg"></span></div></div>
+</div>
 
-        <div id="startScreen">
-            <h1>⚔ СТИВЕН ⚔</h1>
-            <div class="story-box">
-                <p><strong>Стивен Златов</strong> - герой в золотой броне из королевства Ортуссолис.</p>
-                <p>Перед тобой стоит <strong>Самурай из пластилина</strong> - могущественный воин, который угрожает деревне.</p>
-                <p><strong>Твоя цель:</strong> победить босса используя своё мастерство и три вида оружия!</p>
-            </div>
-            <p style="margin-top: 20px; opacity: 0.8;">
-                <strong>ПК:</strong> WASD - движение, SPACE - рывок, ЛКМ - атака, 1/2/3 - оружие<br>
-                <strong>Телефон:</strong> используй кнопки на экране
-            </p>
-            <button onclick="startGame()">НАЧАТЬ БОЙ</button>
-        </div>
+<div id="start">
+<h1>⚔ СТИВЕН ⚔</h1>
+<button onclick="start()">НАЧАТЬ</button>
+</div>
 
-        <div id="gameOver">
-            <h2 id="gameOverText">ПОБЕДА!</h2>
-            <p id="gameOverMessage"></p>
-            <button onclick="location.reload()">ИГРАТЬ СНОВА</button>
-        </div>
-    </div>
+<div id="over">
+<h1 id="res"></h1>
+<button onclick="location.reload()">ЕЩЁ РАЗ</button>
+</div>
+</div>
 
-    <script>
-        const canvas = document.getElementById('canvas');
-        const ctx = canvas.getContext('2d');
-        
-        let gameRunning = false;
-        let keys = {};
-        let mouseX = 0, mouseY = 0;
-        let mouseDown = false;
-        
-        // Мобильное управление
-        let joystickActive = false;
-        let joystickDir = {x: 0, y: 0};
-        
-        // Игрок
-        const player = {
-            x: 100,
-            y: 400,
-            width: 40,
-            height: 60,
-            vx: 0,
-            vy: 0,
-            speed: 5,
-            jumpPower: 14,
-            onGround: false,
-            hp: 50,
-            maxHp: 50,
-            weapon: 0,
-            dashCooldown: 0,
-            dashTime: 0,
-            invincible: 0,
-            attackCooldown: 0,
-            facingRight: true,
-            attackAnim: 0
-        };
-        
-        const weapons = [
-            { name: 'МЕЧ', damage: 6, cooldown: 25, range: 70, color: '#C0C0C0' },
-            { name: 'БОМБ-БУЛАВА', damage: 18, cooldown: 70, range: 80, color: '#FF4500' },
-            { name: 'РАКЕТНЫЙ АРБАЛЕТ', damage: 12, cooldown: 40, range: 400, color: '#4169E1' }
-        ];
-        
-        // Босс
-        const boss = {
-            x: 600,
-            y: 350,
-            width: 50,
-            height: 70,
-            vx: 0,
-            vy: 0,
-            hp: 250,
-            maxHp: 250,
-            state: 'idle',
-            attackCooldown: 0,
-            dashCooldown: 0,
-            phase: 1,
-            onGround: false,
-            facingRight: false,
-            attackAnim: 0,
-            jumpCooldown: 0
-        };
-        
-        let projectiles = [];
-        let particles = [];
-        let shakeAmount = 0;
-        
-        const ground = canvas.height - 120;
-        
-        function startGame() {
-            document.getElementById('startScreen').style.display = 'none';
-            gameRunning = true;
-            gameLoop();
-        }
-        
-        function updateHearts() {
-            const container = document.getElementById('playerHearts');
-            container.innerHTML = '';
-            const hearts = Math.ceil(player.maxHp / 2);
-            const fullHearts = Math.floor(player.hp / 2);
-            
-            for (let i = 0; i < hearts; i++) {
-                const heart = document.createElement('div');
-                heart.className = 'heart' + (i >= fullHearts ? ' empty' : '');
-                container.appendChild(heart);
-            }
-        }
-        
-        function updateWeaponDisplay() {
-            const weapon = weapons[player.weapon];
-            document.getElementById('weaponName').textContent = weapon.name;
-            document.getElementById('weaponDmg').textContent = weapon.damage;
-        }
-        
-        function changeWeapon() {
-            player.weapon = (player.weapon + 1) % weapons.length;
-            updateWeaponDisplay();
-        }
-        
-        function updatePhysics(obj) {
-            obj.vy += 0.7;
-            obj.x += obj.vx;
-            obj.y += obj.vy;
-            
-            if (obj.y + obj.height >= ground) {
-                obj.y = ground - obj.height;
-                obj.vy = 0;
-                obj.onGround = true;
-            } else {
-                obj.onGround = false;
-            }
-            
-            obj.x = Math.max(0, Math.min(canvas.width - obj.width, obj.x));
-        }
-        
-        function createParticle(x, y, color, count = 12) {
-            for (let i = 0; i < count; i++) {
-                particles.push({
-                    x, y,
-                    vx: (Math.random() - 0.5) * 10,
-                    vy: (Math.random() - 0.5) * 10 - 3,
-                    life: 40,
-                    maxLife: 40,
-                    color,
-                    size: Math.random() * 4 + 2
-                });
-            }
-        }
-        
-        function screenShake(amount) {
-            shakeAmount = amount;
-        }
-        
-        function playerAttack() {
-            if (player.attackCooldown > 0) return;
-            
-            const weapon = weapons[player.weapon];
-            player.attackCooldown = weapon.cooldown;
-            player.attackAnim = 15;
-            
-            if (weapon.name === 'РАКЕТНЫЙ АРБАЛЕТ') {
-                const targetX = mouseX || (player.facingRight ? player.x + 200 : player.x - 200);
-                const targetY = mouseY || player.y;
-                const angle = Math.atan2(targetY - player.y, targetX - player.x);
-                projectiles.push({
-                    x: player.x + player.width / 2,
-                    y: player.y + player.height / 3,
-                    vx: Math.cos(angle) * 12,
-                    vy: Math.sin(angle) * 12,
-                    damage: weapon.damage,
-                    owner: 'player',
-                    radius: 6,
-                    color: weapon.color
-                });
-            } else {
-                const dx = boss.x + boss.width/2 - (player.x + player.width/2);
-                const dy = boss.y + boss.height/2 - (player.y + player.height/2);
-                const dist = Math.sqrt(dx * dx + dy * dy);
-                
-                if (dist < weapon.range) {
-                    boss.hp -= weapon.damage;
-                    screenShake(weapon.damage / 3);
-                    createParticle(boss.x + boss.width / 2, boss.y + boss.height / 2, '#FF6B35', 20);
-                    
-                    if (boss.hp <= 0) {
-                        endGame(true);
-                    } else if (boss.hp <= boss.maxHp / 2 && boss.phase === 1) {
-                        boss.phase = 2;
-                        createParticle(boss.x + boss.width/2, boss.y + boss.height/2, '#FF0000', 30);
-                    }
-                }
-            }
-        }
-        
-        function updateBoss() {
-            boss.attackCooldown--;
-            boss.dashCooldown--;
-            boss.jumpCooldown--;
-            boss.attackAnim = Math.max(0, boss.attackAnim - 1);
-            
-            const dx = (player.x + player.width/2) - (boss.x + boss.width/2);
-            const dy = (player.y + player.height/2) - (boss.y + boss.height/2);
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            
-            boss.facingRight = dx > 0;
-            
-            const speed = boss.phase === 2 ? 3.5 : 2.5;
-            
-            if (boss.state !== 'attacking' && dist > 100) {
-                boss.vx = dx > 0 ? speed : -speed;
-            } else {
-                boss.vx *= 0.85;
-            }
-            
-            // Прыжок босса
-            if (boss.onGround && boss.jumpCooldown <= 0 && Math.random() < 0.02 && dist > 150) {
-                boss.vy = -12;
-                boss.jumpCooldown = 80;
-            }
-            
-            if (boss.attackCooldown <= 0 && dist < 400) {
-                const attack = Math.random();
-                const phase2 = boss.phase === 2;
-                
-                if (attack < 0.35 && dist < 100) {
-                    boss.state = 'attacking';
-                    boss.attackAnim = 20;
-                    boss.attackCooldown = phase2 ? 35 : 55;
-                    
-                    setTimeout(() => {
-                        const hitDist = Math.sqrt(
-                            Math.pow((player.x + player.width/2) - (boss.x + boss.width/2), 2) +
-                            Math.pow((player.y + player.height/2) - (boss.y + boss.height/2), 2)
-                        );
-                        if (hitDist < 90 && player.invincible <= 0) {
-                            player.hp -= 10;
-                            player.invincible = 40;
-                            screenShake(8);
-                            createParticle(player.x + player.width / 2, player.y + player.height / 2, '#FF0000', 15);
-                            if (player.hp <= 0) endGame(false);
-                        }
-                        boss.state = 'idle';
-                    }, 400);
-                    
-                } else if (attack < 0.7) {
-                    boss.attackCooldown = phase2 ? 45 : 70;
-                    const count = phase2 ? 5 : 3;
-                    
-                    for (let i = 0; i < count; i++) {
-                        const spread = phase2 ? 0.4 : 0.3;
-                        const angle = Math.atan2(dy, dx) + (i - (count-1)/2) * spread;
-                        projectiles.push({
-                            x: boss.x + boss.width / 2,
-                            y: boss.y + boss.height / 3,
-                            vx: Math.cos(angle) * 7,
-                            vy: Math.sin(angle) * 7,
-                            damage: 6,
-                            owner: 'boss',
-                            radius: 5,
-                            color: '#8B0000',
-                            rotation: 0
-                        });
-                    }
-                } else if (boss.dashCooldown <= 0 && dist > 120) {
-                    boss.dashCooldown = phase2 ? 90 : 140;
-                    boss.vx = dx > 0 ? 18 : -18;
-                    createParticle(boss.x + boss.width/2, boss.y + boss.height, '#FFD700', 10);
-                }
-            }
-            
-            updatePhysics(boss);
-        }
-        
-        function updateProjectiles() {
-            projectiles = projectiles.filter(p => {
-                p.x += p.vx;
-                p.y += p.vy;
-                if (p.owner === 'boss') {
-                    p.rotation = (p.rotation || 0) + 0.3;
-                }
-                
-                if (p.owner === 'player') {
-                    const dx = p.x - (boss.x + boss.width / 2);
-                    const dy = p.y - (boss.y + boss.height / 2);
-                    if (Math.sqrt(dx*dx + dy*dy) < 35) {
-                        boss.hp -= p.damage;
-                        screenShake(5);
-                        createParticle(p.x, p.y, '#FF6B35', 15);
-                        if (boss.hp <= 0) endGame(true);
-                        else if (boss.hp <= boss.maxHp / 2 && boss.phase === 1) {
-                            boss.phase = 2;
-                            createParticle(boss.x + boss.width/2, boss.y + boss.height/2, '#FF0000', 30);
-                        }
-                        return false;
-                    }
-                } else {
-                    const dx = p.x - (player.x + player.width / 2);
-                    const dy = p.y - (player.y + player.height / 2);
-                    if (Math.sqrt(dx*dx + dy*dy) < 30 && player.invincible <= 0) {
-                        player.hp -= p.damage;
-                        player.invincible = 40;
-                        screenShake(6);
-                        createParticle(p.x, p.y, '#FF0000', 12);
-                        if (player.hp <= 0) endGame(false);
-                        return false;
-                    }
-                }
-                
-                return p.x > -50 && p.x < canvas.width + 50 && p.y > -50 && p.y < canvas.height + 50;
-            });
-        }
-        
-        function updateParticles() {
-            particles = particles.filter(p => {
-                p.x += p.vx;
-                p.y += p.vy;
-                p.vy += 0.4;
-                p.vx *= 0.98;
-                p.life--;
-                return p.life > 0;
-            });
-        }
-        
-        function drawPlayer() {
-            ctx.save();
-            if (player.invincible % 8 < 4) {
-                const x = player.x;
-                const y = player.y;
-                const scale = player.facingRight ? 1 : -1;
-                
-                ctx.translate(x + player.width/2, y);
-                ctx.scale(scale, 1);
-                ctx.translate(-(x + player.width/2), -y);
-                
-                // Голова (оранжевый куб Minecraft)
-                ctx.fillStyle = '#FF8C42';
-                ctx.fillRect(x + 10, y, 20, 20);
-                ctx.strokeStyle = '#D97028';
-                ctx.lineWidth = 2;
-                ctx.strokeRect(x + 10, y, 20, 20);
-                
-                // Глаза
-                ctx.fillStyle = '#8B4513';
-                ctx.fillRect(x + 13, y + 7, 4, 5);
-                ctx.fillRect(x + 23, y + 7, 4, 5);
-                
-                // Улыбка
-                ctx.fillRect(x + 15, y + 15, 10, 2);
-                
-                // Тело (синяя рубашка)
-                ctx.fillStyle = '#4A90E2';
-                ctx.fillRect(x + 8, y + 20, 24, 22);
-                ctx.strokeStyle = '#357ABD';
-                ctx.lineWidth = 1;
-                ctx.strokeRect(x + 8, y + 20, 24, 22);
-                
-                // Руки
-                const armOffset = player.attackAnim > 0 ? -5 : 0;
-                ctx.fillStyle = '#FF8C42';
-                ctx.fillRect(x + 2, y + 22 + armOffset, 6, 16);
-                ctx.fillRect(x + 32, y + 22 + armOffset, 6, 16);
-                
-                // Оружие в руке
-                if (player.attackAnim > 0) {
-                    const weapon = weapons[player.weapon];
-                    ctx.fillStyle = weapon.color;
-                    ctx.fillRect(x + (player.facingRight ? 35 : 0), y + 25, 12, 4);
-                }
-                
-                // Штаны (фиолетовые)
-                ctx.fillStyle = '#9B59B6';
-                ctx.fillRect(x + 10, y + 42, 9, 18);
-                ctx.fillRect(x + 21, y + 42, 9, 18);
-                
-                // Золотой шлем (корона)
-                ctx.fillStyle = '#FFD700';
-                ctx.beginPath();
-                ctx.moveTo(x + 8, y);
-                ctx.lineTo(x + 12, y - 5);
-                ctx.lineTo(x + 15, y);
-                ctx.lineTo(x + 20, y - 7);
-                ctx.lineTo(x + 25, y);
-                ctx.lineTo(x + 28, y - 5);
-                ctx.lineTo(x + 32, y);
-                ctx.lineTo(x + 8, y);
-                ctx.fill();
-            }
-            ctx.restore();
-        }
-        
-        function drawBoss() {
-            const x = boss.x;
-            const y = boss.y;
-            const scale = boss.facingRight ? 1 : -1;
-            
-            ctx.save();
-            ctx.translate(x + boss.width/2, y);
-            ctx.scale(scale, 1);
-            ctx.translate(-(x + boss.width/2), -y);
-            
-            // Тело (серая броня с текстурой)
-            const gradient = ctx.createLinearGradient(x, y + 20, x, y + 45);
-            gradient.addColorStop(0, '#909090');
-            gradient.addColorStop(1, '#606060');
-            ctx.fillStyle = gradient;
-            ctx.fillRect(x + 10, y + 20, 30, 28);
-            ctx.strokeStyle = '#404040';
-            ctx.lineWidth = 2;
-            ctx.strokeRect(x + 10, y + 20, 30, 28);
-            
-            // Детали брони
-            ctx.fillStyle = '#505050';
-            for (let i = 0; i < 3; i++) {
-                ctx.fillRect(x + 15, y + 25 + i * 6, 20, 3);
-            }
-            
-            // Плечи (оранжевые наплечники)
-            ctx.fillStyle = '#FF6B35';
-            ctx.beginPath();
-            ctx.arc(x + 5, y + 25, 10, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.strokeStyle = '#D94515';
-            ctx.lineWidth = 2;
-            ctx.stroke();
-            
-            ctx.beginPath();
-            ctx.arc(x + 45, y + 25, 10, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.stroke();
-            
-            // Голова (пластилиновая текстура)
-            ctx.fillStyle = '#FFB84D';
-            ctx.fillRect(x + 15, y + 2, 20, 18);
-            
-            // Глаза самурая
-            ctx.fillStyle = '#000';
-            ctx.fillRect(x + 18, y + 8, 5, 3);
-            ctx.fillRect(x + 27, y + 8, 5, 3);
-            
-            // Рот
-            ctx.fillRect(x + 20, y + 14, 10, 2);
-            
-            // Шлем самурая с рогами
-            ctx.fillStyle = '#FF6B35';
-            ctx.fillRect(x + 13, y, 24, 4);
-            
-            // Рога
-            ctx.beginPath();
-            ctx.moveTo(x + 12, y + 2);
-            ctx.lineTo(x + 8, y - 10);
-            ctx.lineTo(x + 15, y);
-            ctx.fill();
-            
-            ctx.beginPath();
-            ctx.moveTo(x + 38, y + 2);
-            ctx.lineTo(x + 42, y - 10);
-            ctx.lineTo(x + 35, y);
-            ctx.fill();
-            
-            // Золотые украшения на рогах
-            ctx.fillStyle = '#FFD700';
-            ctx.fillRect(x + 8, y - 10, 3, 3);
-            ctx.fillRect(x + 42, y - 10, 3, 3);
-            
-            // Ноги
-            ctx.fillStyle = '#FF6B35';
-            ctx.fillRect(x + 15, y + 48, 8, 22);
-            ctx.fillRect(x + 27, y + 48, 8, 22);
-            
-            // Меч (если атакует)
-            if (boss.attackAnim > 0) {
-                ctx.fillStyle = '#C0C0C0';
-                ctx.fillRect(x + (boss.facingRight ? 42 : 0), y + 30, 20, 5);
-                ctx.fillStyle = '#8B4513';
-                ctx.fillRect(x + (boss.facingRight ? 40 : 18), y + 28, 5, 9);
-            }
-            
-            ctx.restore();
-            
-            // HP бар босса
-            const barWidth = 80;
-            const barX = x + boss.width/2 - barWidth/2;
-            ctx.fillStyle = 'rgba(0,0,0,0.7)';
-            ctx.fillRect(barX, y - 20, barWidth, 10);
-            
-            const hpPercent = boss.hp / boss.maxHp;
-            const gradient2 = ctx.createLinearGradient(barX, 0, barX + barWidth, 0);
-            if (boss.phase === 2) {
-<parameter name="old_str">            const hpPercent = boss.hp / boss.maxHp;
-const gradient2 = ctx.createLinearGradient(barX, 0, barX + barWidth, 0);
-if (boss.phase === 2) {</parameter>
-<parameter name="new_str">            const hpPercent = boss.hp / boss.maxHp;
-const gradient2 = ctx.createLinearGradient(barX, 0, barX + barWidth, 0);
-if (boss.phase === 2) {
-gradient2.addColorStop(0, '#ff0000');
-gradient2.addColorStop(1, '#ff6600');
-} else {
-gradient2.addColorStop(0, '#ff6600');
-gradient2.addColorStop(1, '#ffaa00');
+<script>
+const c=document.getElementById("c"),x=c.getContext("2d");
+const W=800,H=600,G=480;
+
+let run=false,keys={},mouse=false,last=0,fps=1000/60;
+
+const player={x:100,y:400,w:40,h:60,vx:0,vy:0,hp:50,max:50,spd:5,j:14,cd:0,face:1};
+const boss={x:600,y:350,w:50,h:70,hp:250,max:250};
+
+const weapons=[
+{name:"МЕЧ",d:6,cd:20},
+{name:"БУЛАВА",d:18,cd:45},
+{name:"АРБАЛЕТ",d:12,cd:30}
+];
+
+function start(){document.getElementById("start").style.display="none";run=true;loop(0)}
+
+function hearts(){
+const h=document.getElementById("hp");h.innerHTML="";
+for(let i=0;i<Math.ceil(player.max/2);i++){
+const d=document.createElement("div");
+d.className="heart"+(i>=Math.ceil(player.hp/2)?" empty":"");
+h.appendChild(d);
+}}
+
+function weaponUI(){
+wName.textContent=weapons[player.w||0].name;
+wDmg.textContent=weapons[player.w||0].d;
 }
-ctx.fillStyle = gradient2;
-ctx.fillRect(barX, y - 20, barWidth * hpPercent, 10);
 
+function phys(o){
+o.vy+=0.7;
+o.x+=o.vx;o.y+=o.vy;
+if(o.y+o.h>=G){o.y=G-o.h;o.vy=0}
+o.x=Math.max(0,Math.min(W-o.w,o.x));
+}
 
-        ctx.strokeStyle = boss.phase === 2 ? '#ff0000' : '#FFD700';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(barX, y - 20, barWidth, 10);
-    }
-    
-    function draw() {
-        ctx.save();
-        if (shakeAmount > 0) {
-            ctx.translate(
-                (Math.random() - 0.5) * shakeAmount,
-                (Math.random() - 0.5) * shakeAmount
-            );
-            shakeAmount *= 0.8;
-            if (shakeAmount < 0.1) shakeAmount = 0;
-        }
-        
-        // Фон (небо)
-        const skyGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-        skyGradient.addColorStop(0, '#87CEEB');
-        skyGradient.addColorStop(0.7, '#B0E0E6');
-        skyGradient.addColorStop(1, '#98D8C8');
-        ctx.fillStyle = skyGradient;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        
-        // Облака
-        ctx.fillStyle = 'rgba(255,255,255,0.6)';
-        ctx.beginPath();
-        ctx.arc(100, 80, 40, 0, Math.PI * 2);
-        ctx.arc(140, 70, 50, 0, Math.PI * 2);
-        ctx.arc(180, 80, 40, 0, Math.PI * 2);
-        ctx.fill();
-        
-        ctx.beginPath();
-        ctx.arc(500, 120, 35, 0, Math.PI * 2);
-        ctx.arc(540, 110, 45, 0, Math.PI * 2);
-        ctx.arc(580, 120, 35, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // Земля с текстурой
-        const groundGradient = ctx.createLinearGradient(0, ground, 0, canvas.height);
-        groundGradient.addColorStop(0, '#8B6914');
-        groundGradient.addColorStop(1, '#654321');
-        ctx.fillStyle = groundGradient;
-        ctx.fillRect(0, ground, canvas.width, canvas.height - ground);
-        
-        // Трава
-        ctx.fillStyle = '#7CB342';
-        ctx.fillRect(0, ground - 8, canvas.width, 8);
-        
-        // Детали травы
-        ctx.fillStyle = '#689F38';
-        for (let i = 0; i < canvas.width; i += 20) {
-            ctx.fillRect(i, ground - 8, 2, 8);
-            ctx.fillRect(i + 10, ground - 8, 2, 8);
-        }
-        
-        // Частицы (позади персонажей)
-        particles.forEach(p => {
-            ctx.fillStyle = p.color;
-            ctx.globalAlpha = p.life / p.maxLife;
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-            ctx.fill();
-        });
-        ctx.globalAlpha = 1;
-        
-        // Снаряды
-        projectiles.forEach(p => {
-            ctx.save();
-            ctx.translate(p.x, p.y);
-            if (p.rotation) ctx.rotate(p.rotation);
-            
-            if (p.owner === 'boss') {
-                // Сюрикен
-                ctx.fillStyle = p.color;
-                ctx.beginPath();
-                for (let i = 0; i < 4; i++) {
-                    const angle = (Math.PI / 2) * i;
-                    ctx.moveTo(0, 0);
-                    ctx.lineTo(Math.cos(angle) * p.radius * 2, Math.sin(angle) * p.radius * 2);
-                }
-                ctx.fill();
-                ctx.strokeStyle = '#000';
-                ctx.lineWidth = 1;
-                ctx.stroke();
-            } else {
-                // Снаряд игрока
-                ctx.fillStyle = p.color;
-                ctx.shadowColor = p.color;
-                ctx.shadowBlur = 10;
-                ctx.beginPath();
-                ctx.arc(0, 0, p.radius, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.shadowBlur = 0;
-            }
-            ctx.restore();
-        });
-        
-        drawPlayer();
-        drawBoss();
-        
-        ctx.restore();
-    }
-    
-    function gameLoop() {
-        if (!gameRunning) return;
-        
-        // Управление
-        player.vx = 0;
-        if (keys['a'] || keys['A'] || joystickDir.x < 0) {
-            player.vx = -player.speed;
-            player.facingRight = false;
-        }
-        if (keys['d'] || keys['D'] || joystickDir.x > 0) {
-            player.vx = player.speed;
-            player.facingRight = true;
-        }
-        if ((keys['w'] || keys['W'] || joystickDir.y < 0) && player.onGround) {
-            player.vy = -player.jumpPower;
-        }
-        
-        if (keys[' '] && player.dashCooldown <= 0 && player.dashTime <= 0) {
-            player.dashTime = 12;
-            player.dashCooldown = 70;
-            const dashDir = player.facingRight ? 1 : -1;
-            player.vx = dashDir * 20;
-            createParticle(player.x + player.width/2, player.y + player.height/2, '#FFD700', 8);
-        }
-        
-        if (player.dashTime > 0) player.dashTime--;
-        
-        player.dashCooldown--;
-        player.attackCooldown--;
-        player.invincible--;
-        player.attackAnim = Math.max(0, player.attackAnim - 1);
-        
-        if (mouseDown) playerAttack();
-        
-        updatePhysics(player);
-        updateBoss();
-        updateProjectiles();
-        updateParticles();
-        updateHearts();
-        
-        draw();
-        requestAnimationFrame(gameLoop);
-    }
-    
-    function endGame(victory) {
-        gameRunning = false;
-        const gameOver = document.getElementById('gameOver');
-        const text = document.getElementById('gameOverText');
-        const message = document.getElementById('gameOverMessage');
-        
-        if (victory) {
-            text.textContent = 'ПОБЕДА!';
-            text.style.color = '#FFD700';
-            message.textContent = '⚔ Стивен Златов победил самурая из пластилина! Деревня спасена! ⚔';
-            createParticle(canvas.width/2, canvas.height/2, '#FFD700', 50);
-        } else {
-            text.textContent = 'ПОРАЖЕНИЕ';
-            text.style.color = '#ff0000';
-            message.textContent = 'Самурай оказался сильнее... Но Стивен не сдаётся!';
-        }
-        
-        gameOver.style.display = 'block';
-    }
-    
-    // События клавиатуры
-    document.addEventListener('keydown', e => {
-        keys[e.key] = true;
-        if (e.key >= '1' && e.key <= '3') {
-            player.weapon = parseInt(e.key) - 1;
-            updateWeaponDisplay();
-        }
-    });
-    document.addEventListener('keyup', e => keys[e.key] = false);
-    
-    // Мышь
-    canvas.addEventListener('mousemove', e => {
-        const rect = canvas.getBoundingClientRect();
-        mouseX = (e.clientX - rect.left) * (canvas.width / rect.width);
-        mouseY = (e.clientY - rect.top) * (canvas.height / rect.height);
-    });
-    canvas.addEventListener('mousedown', () => mouseDown = true);
-    canvas.addEventListener('mouseup', () => mouseDown = false);
-    
-    // Мобильное управление
-    const joystick = document.getElementById('joystick');
-    const dashBtn = document.getElementById('dashBtn');
-    const attackBtn = document.getElementById('attackBtn');
-    
-    joystick.addEventListener('touchstart', handleJoystickStart);
-    joystick.addEventListener('touchmove', handleJoystickMove);
-    joystick.addEventListener('touchend', handleJoystickEnd);
-    
-    dashBtn.addEventListener('touchstart', e => {
-        e.preventDefault();
-        keys[' '] = true;
-    });
-    dashBtn.addEventListener('touchend', e => {
-        e.preventDefault();
-        keys[' '] = false;
-    });
-    
-    attackBtn.addEventListener('touchstart', e => {
-        e.preventDefault();
-        mouseDown = true;
-    });
-    attackBtn.addEventListener('touchend', e => {
-        e.preventDefault();
-        mouseDown = false;
-    });
-    
-    function handleJoystickStart(e) {
-        e.preventDefault();
-        joystickActive = true;
-    }
-    
-    function handleJoystickMove(e) {
-        if (!joystickActive) return;
-        e.preventDefault();
-        
-        const touch = e.touches[0];
-        const rect = joystick.getBoundingClientRect();
-        const centerX = rect.left + rect.width / 2;
-        const centerY = rect.top + rect.height / 2;
-        
-        const dx = touch.clientX - centerX;
-        const dy = touch.clientY - centerY;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        
-        if (distance > 20) {
-            joystickDir.x = dx / distance;
-            joystickDir.y = dy / distance;
-        } else {
-            joystickDir.x = 0;
-            joystickDir.y = 0;
-        }
-    }
-    
-    function handleJoystickEnd(e) {
-        e.preventDefault();
-        joystickActive = false;
-        joystickDir.x = 0;
-        joystickDir.y = 0;
-    }
-    
-    updateHearts();
-    updateWeaponDisplay();
+function attack(){
+if(player.cd>0)return;
+player.cd=weapons[player.w||0].cd;
+const dx=(boss.x+25)-(player.x+20);
+const dy=(boss.y+35)-(player.y+30);
+if(dx*dx+dy*dy<10000){
+boss.hp-=weapons[player.w||0].d;
+if(boss.hp<=0)end(true);
+}}
+
+function draw(){
+x.fillStyle="#87ceeb";x.fillRect(0,0,W,H);
+x.fillStyle="#654321";x.fillRect(0,G,W,200);
+x.fillStyle="#FFD700";x.fillRect(player.x,player.y,player.w,player.h);
+x.fillStyle="#888";x.fillRect(boss.x,boss.y,boss.w,boss.h);
+}
+
+function loop(t){
+if(!run)return;
+if(t-last<fps){requestAnimationFrame(loop);return;}
+last=t;
+
+player.vx=0;
+if(keys.a)player.vx=-player.spd;
+if(keys.d)player.vx=player.spd;
+if(keys.w&&player.y+player.h>=G)player.vy=-player.j;
+if(mouse)attack();
+
+player.cd=Math.max(0,player.cd-1);
+phys(player); phys(boss);
+
+hearts(); weaponUI(); draw();
+requestAnimationFrame(loop);
+}
+
+function end(win){
+run=false;
+document.getElementById("over").style.display="flex";
+res.textContent=win?"ПОБЕДА":"ПОРАЖЕНИЕ";
+}
+
+document.addEventListener("keydown",e=>{
+keys[e.key]=1;
+if(e.key>="1"&&e.key<="3")player.w=e.key-1;
+});
+document.addEventListener("keyup",e=>keys[e.key]=0);
+c.onmousedown=()=>mouse=true;
+c.onmouseup=()=>mouse=false;
+
+hearts(); weaponUI();
 </script>
-
-
 </body>
-
-</html></parameter>
+</html>
