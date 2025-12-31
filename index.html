@@ -3,89 +3,131 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Стивен: Битва с Самураем (Optimized)</title>
+<title>Стивен — ретро управление</title>
 
 <style>
-body{margin:0;background:#111;display:flex;justify-content:center;align-items:center;height:100vh;overflow:hidden;font-family:monospace}
-#game{position:relative;width:100%;max-width:800px;aspect-ratio:4/3;border:4px solid #333}
-canvas{width:100%;height:100%;image-rendering:pixelated}
-#ui{position:absolute;top:8px;left:8px;right:8px;display:flex;justify-content:space-between;pointer-events:none}
-.box{background:rgba(0,0,0,.7);border:2px solid #555;padding:6px;border-radius:6px;color:gold;font-size:11px}
-.hearts{display:flex;gap:3px}
-.heart{width:14px;height:14px;background:red;clip-path:polygon(50% 15%,61% 0%,78% 0%,93% 15%,93% 35%,50% 85%,7% 35%,7% 15%,22% 0%,39% 0%)}
+body{margin:0;background:#111;overflow:hidden}
+#game{position:relative;width:100vw;height:100vh}
+canvas{width:100%;height:100%}
+
+/* UI */
+#ui{position:absolute;top:8px;left:8px;right:8px;display:flex;justify-content:space-between;color:white;font-family:monospace}
+.box{background:#000a;padding:6px;border-radius:6px;font-size:12px}
+.hearts{display:flex;gap:4px}
+.heart{width:14px;height:14px;background:red}
 .empty{background:#333}
-#start,#over{position:absolute;inset:0;background:#000c;display:flex;flex-direction:column;justify-content:center;align-items:center;color:white}
-#over{display:none}
-button{margin-top:15px;padding:12px 30px;font-size:18px;border:none;border-radius:10px;background:#667eea;color:white}
+
+/* TOUCH CONTROLS */
+#controls{
+position:absolute;
+bottom:10px;
+left:0;
+right:0;
+display:flex;
+justify-content:space-between;
+padding:10px;
+pointer-events:auto;
+}
+
+.pad, .actions{
+display:flex;
+gap:10px;
+}
+
+.btn{
+width:60px;
+height:60px;
+background:#222;
+border:3px solid #555;
+border-radius:12px;
+color:white;
+font-size:24px;
+display:flex;
+align-items:center;
+justify-content:center;
+user-select:none;
+}
+
+.btn:active{background:#555}
 </style>
 </head>
 
 <body>
 <div id="game">
+
 <canvas id="c" width="800" height="600"></canvas>
 
 <div id="ui">
-<div class="box"><div>СТИВЕН</div><div class="hearts" id="hp"></div></div>
-<div class="box"><div id="wName"></div><div>урон <span id="wDmg"></span></div></div>
+  <div class="box"><div>HP</div><div class="hearts" id="hp"></div></div>
+  <div class="box"><div id="wName"></div><div>урон <span id="wDmg"></span></div></div>
 </div>
 
-<div id="start">
-<h1>⚔ СТИВЕН ⚔</h1>
-<button onclick="start()">НАЧАТЬ</button>
+<!-- TOUCH CONTROLS -->
+<div id="controls">
+  <div class="pad">
+    <div class="btn" id="left">◀</div>
+    <div class="btn" id="right">▶</div>
+  </div>
+  <div class="actions">
+    <div class="btn" id="jump">A</div>
+    <div class="btn" id="attack">B</div>
+  </div>
 </div>
 
-<div id="over">
-<h1 id="res"></h1>
-<button onclick="location.reload()">ЕЩЁ РАЗ</button>
-</div>
 </div>
 
 <script>
-const c=document.getElementById("c"),x=c.getContext("2d");
+const c=document.getElementById("c");
+const x=c.getContext("2d");
+
 const W=800,H=600,G=480;
 
-let run=false,keys={},mouse=false,last=0,fps=1000/60;
-
-const player={x:100,y:400,w:40,h:60,vx:0,vy:0,hp:50,max:50,spd:5,j:14,cd:0,face:1};
-const boss={x:600,y:350,w:50,h:70,hp:250,max:250};
+let keys={},run=true,last=0;
+const fps=1000/60;
 
 const weapons=[
-{name:"МЕЧ",d:6,cd:20},
-{name:"БУЛАВА",d:18,cd:45},
-{name:"АРБАЛЕТ",d:12,cd:30}
+{name:"МЕЧ",dmg:6,cd:20},
+{name:"БУЛАВА",dmg:18,cd:45},
+{name:"АРБАЛЕТ",dmg:12,cd:30}
 ];
 
-function start(){document.getElementById("start").style.display="none";run=true;loop(0)}
+const player={
+x:100,y:400,w:40,h:60,
+vx:0,vy:0,
+hp:50,max:50,
+spd:5,j:14,
+cd:0,w:0
+};
+
+const boss={x:600,y:410,w:50,h:70,hp:200};
 
 function hearts(){
-const h=document.getElementById("hp");h.innerHTML="";
-for(let i=0;i<Math.ceil(player.max/2);i++){
+hp.innerHTML="";
+for(let i=0;i<player.max/2;i++){
 const d=document.createElement("div");
-d.className="heart"+(i>=Math.ceil(player.hp/2)?" empty":"");
-h.appendChild(d);
+d.className="heart"+(i>=player.hp/2?" empty":"");
+hp.appendChild(d);
 }}
 
 function weaponUI(){
-wName.textContent=weapons[player.w||0].name;
-wDmg.textContent=weapons[player.w||0].d;
+wName.textContent=weapons[player.w].name;
+wDmg.textContent=weapons[player.w].dmg;
 }
 
 function phys(o){
 o.vy+=0.7;
-o.x+=o.vx;o.y+=o.vy;
+o.x+=o.vx;
+o.y+=o.vy;
 if(o.y+o.h>=G){o.y=G-o.h;o.vy=0}
-o.x=Math.max(0,Math.min(W-o.w,o.x));
 }
 
 function attack(){
 if(player.cd>0)return;
-player.cd=weapons[player.w||0].cd;
+player.cd=weapons[player.w].cd;
 const dx=(boss.x+25)-(player.x+20);
 const dy=(boss.y+35)-(player.y+30);
-if(dx*dx+dy*dy<10000){
-boss.hp-=weapons[player.w||0].d;
-if(boss.hp<=0)end(true);
-}}
+if(dx*dx+dy*dy<10000)boss.hp-=weapons[player.w].dmg;
+}
 
 function draw(){
 x.fillStyle="#87ceeb";x.fillRect(0,0,W,H);
@@ -95,36 +137,49 @@ x.fillStyle="#888";x.fillRect(boss.x,boss.y,boss.w,boss.h);
 }
 
 function loop(t){
-if(!run)return;
 if(t-last<fps){requestAnimationFrame(loop);return;}
 last=t;
 
 player.vx=0;
-if(keys.a)player.vx=-player.spd;
-if(keys.d)player.vx=player.spd;
-if(keys.w&&player.y+player.h>=G)player.vy=-player.j;
-if(mouse)attack();
+if(keys.left)player.vx=-player.spd;
+if(keys.right)player.vx=player.spd;
+if(keys.jump && player.y+player.h>=G)player.vy=-player.j;
+if(keys.attack)attack();
 
 player.cd=Math.max(0,player.cd-1);
-phys(player); phys(boss);
+phys(player);
 
-hearts(); weaponUI(); draw();
+draw(); hearts(); weaponUI();
 requestAnimationFrame(loop);
 }
+requestAnimationFrame(loop);
 
-function end(win){
-run=false;
-document.getElementById("over").style.display="flex";
-res.textContent=win?"ПОБЕДА":"ПОРАЖЕНИЕ";
-}
+/* TOUCH EVENTS */
+const bind=(id,key)=>{
+const b=document.getElementById(id);
+b.ontouchstart=e=>{e.preventDefault();keys[key]=true};
+b.ontouchend=e=>{e.preventDefault();keys[key]=false};
+};
 
-document.addEventListener("keydown",e=>{
-keys[e.key]=1;
+bind("left","left");
+bind("right","right");
+bind("jump","jump");
+bind("attack","attack");
+
+/* KEYBOARD */
+onkeydown=e=>{
+if(e.key==="a")keys.left=true;
+if(e.key==="d")keys.right=true;
+if(e.key==="w")keys.jump=true;
+if(e.key===" ")keys.attack=true;
 if(e.key>="1"&&e.key<="3")player.w=e.key-1;
-});
-document.addEventListener("keyup",e=>keys[e.key]=0);
-c.onmousedown=()=>mouse=true;
-c.onmouseup=()=>mouse=false;
+};
+onkeyup=e=>{
+if(e.key==="a")keys.left=false;
+if(e.key==="d")keys.right=false;
+if(e.key==="w")keys.jump=false;
+if(e.key===" ")keys.attack=false;
+};
 
 hearts(); weaponUI();
 </script>
